@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro de Chamados</title>
+    <style>
+        :root {
+            --fundo: #f4f1ea;
+            --cartao: #fffdf8;
+            --tinta: #1f2933;
+            --suave: #52606d;
+            --linha: #e4dccf;
+            --azul: #1d4e89;
+            --azul-escuro: #163a66;
+            --aviso: #8a3b12;
+            --aviso-fundo: #fff1e6;
+            --perigo: #9b2335;
+            --perigo-escuro: #7a1b2a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Candara, sans-serif;
+            color: var(--tinta);
+            background:
+                radial-gradient(circle at top left, #fffaf2 0, transparent 36%),
+                var(--fundo);
+        }
+
+        main {
+            width: min(920px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 40px 0 64px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 2rem;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitulo {
+            margin: 0 0 28px;
+            color: var(--suave);
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+            outline: 3px solid #8fb8e8;
+            outline-offset: 2px;
+        }
+
+        .primario {
+            background: var(--azul);
+            color: white;
+        }
+
+        .primario:hover {
+            background: var(--azul-escuro);
+        }
+
+        .secundario,
+        .editar {
+            background: #efe8dc;
+            color: var(--tinta);
+        }
+
+        .secundario:hover,
+        .editar:hover {
+            background: #e4d9c8;
+        }
+
+        .excluir,
+        .perigo {
+            background: var(--perigo);
+            color: white;
+        }
+
+        .excluir:hover,
+        .perigo:hover {
+            background: var(--perigo-escuro);
+        }
+
+        .cartao {
+            background: var(--cartao);
+            border: 1px solid var(--linha);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(61, 48, 28, 0.06);
+        }
+
+        form {
+            display: grid;
+            gap: 16px;
+        }
+
+        label {
+            display: grid;
+            gap: 6px;
+            font-weight: 650;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid #d9d0c3;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: white;
+            color: var(--tinta);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .acoes-formulario {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .aviso {
+            margin: 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: var(--aviso-fundo);
+            color: var(--aviso);
+        }
+
+        #lista,
+        #vazio,
+        #formulario {
+            margin-top: 20px;
+        }
+
+        .contador {
+            margin: 0 0 14px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--linha);
+        }
+
+        th {
+            font-size: 0.85rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--suave);
+        }
+
+        td:nth-child(2) {
+            white-space: pre-wrap;
+        }
+
+        .acoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .vazio-texto {
+            margin: 0 0 16px;
+            font-size: 1.25rem;
+            line-height: 1.45;
+        }
+
+        .jogo {
+            width: 100%;
+            height: 220px;
+            display: block;
+            border-radius: 12px;
+            background: #d7ecf8;
+            cursor: pointer;
+        }
+
+        .dica {
+            margin: 10px 0 0;
+            color: var(--suave);
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            background: rgba(31, 41, 51, 0.45);
+        }
+
+        .modal[hidden],
+        #formulario[hidden],
+        #lista[hidden],
+        #vazio[hidden] {
+            display: none;
+        }
+
+        .modal-caixa {
+            width: min(420px, 100%);
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        }
+
+        .modal-caixa h2,
+        .modal-caixa p {
+            margin-top: 0;
+        }
+
+        .modal-acoes {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Cadastro de Chamados</h1>
+        <p class="subtitulo">Registre, revise e encerre os chamados deste navegador.</p>
+
+        <button id="novoChamado" class="primario" type="button">Novo Chamado</button>
+
+        <section id="formulario" class="cartao" hidden>
+            <form id="formularioChamado">
+                <label>
+                    Título
+                    <input id="titulo" name="titulo" type="text" maxlength="120" autocomplete="off">
+                </label>
+                <label>
+                    Descrição
+                    <textarea id="descricao" name="descricao" maxlength="2000"></textarea>
+                </label>
+                <p id="aviso" class="aviso" hidden></p>
+                <div class="acoes-formulario">
+                    <button id="salvar" class="primario" type="submit">Salvar</button>
+                    <button id="cancelar" class="secundario" type="button">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="lista" class="cartao" hidden>
+            <p id="contador" class="contador"></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Descrição</th>
+                        <th>Data de abertura</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
+        </section>
+
+        <section id="vazio" class="cartao" hidden>
+            <p class="vazio-texto">Eba! nenhum chamado para atender por enquanto, Vamos nos divertir</p>
+            <canvas id="jogo" class="jogo" width="860" height="220" aria-label="Jogo do estudante. Pule os livros e as provas."></canvas>
+            <p class="dica">Espaço, seta para cima ou clique no cenário para pular.</p>
+        </section>
+    </main>
+
+    <div id="modal" class="modal" hidden>
+        <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
+            <h2 id="tituloModal">Excluir chamado?</h2>
+            <p id="textoModal"></p>
+            <div class="modal-acoes">
+                <button id="confirmarExclusao" class="perigo" type="button">Excluir</button>
+                <button id="cancelarExclusao" class="secundario" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var CHAVE = "chamados";
+        var chamados = carregarChamados();
+        var editandoId = null;
+        var excluindoId = null;
+
+        var novoChamado = document.getElementById("novoChamado");
+        var formulario = document.getElementById("formulario");
+        var formularioChamado = document.getElementById("formularioChamado");
+        var titulo = document.getElementById("titulo");
+        var descricao = document.getElementById("descricao");
+        var aviso = document.getElementById("aviso");
+        var salvar = document.getElementById("salvar");
+        var cancelar = document.getElementById("cancelar");
+        var lista = document.getElementById("lista");
+        var contador = document.getElementById("contador");
+        var corpoTabela = document.getElementById("corpoTabela");
+        var vazio = document.getElementById("vazio");
+        var modal = document.getElementById("modal");
+        var textoModal = document.getElementById("textoModal");
+        var confirmarExclusao = document.getElementById("confirmarExclusao");
+        var cancelarExclusao = document.getElementById("cancelarExclusao");
+        var canvas = document.getElementById("jogo");
+        var contexto = canvas.getContext("2d");
+
+        var jogo = {
+            ativo: false,
+            quadroId: 0,
+            chao: 176,
+            alunoX: 72,
+            alunoY: 176,
+            velocidadeVertical: 0,
+            noChao: true,
+            passo: 0,
+            gravidade: 0.55,
+            impulso: -11.2,
+            obstaculos: [],
+            velocidade: 5,
+            distancia: 0,
+            proximoObstaculo: 80,
+            pontos: 0,
+            fim: false
+        };
+
+        novoChamado.addEventListener("click", abrirInclusao);
+        formularioChamado.addEventListener("submit", salvarChamado);
+        cancelar.addEventListener("click", fecharFormulario);
+        confirmarExclusao.addEventListener("click", confirmarRemocao);
+        cancelarExclusao.addEventListener("click", fecharModal);
+        modal.addEventListener("click", function (evento) {
+            if (evento.target === modal) {
+                fecharModal();
+            }
+        });
+        document.addEventListener("keydown", teclaPressionada);
+        canvas.addEventListener("pointerdown", clicarJogo);
+        window.addEventListener("resize", ajustarCanvas);
+
+        desenharTela();
+
+        function carregarChamados() {
+            try {
+                var texto = localStorage.getItem(CHAVE);
+                var listaSalva = texto ? JSON.parse(texto) : [];
+                return Array.isArray(listaSalva) ? listaSalva : [];
+            } catch (erro) {
+                return [];
+            }
+        }
+
+        function guardarChamados() {
+            localStorage.setItem(CHAVE, JSON.stringify(chamados));
+        }
+
+        function abrirInclusao() {
+            editandoId = null;
+            formularioChamado.reset();
+            esconderAviso();
+            salvar.textContent = "Salvar";
+            formulario.hidden = false;
+            novoChamado.hidden = true;
+            titulo.focus();
+        }
+
+        function abrirEdicao(id) {
+            var chamado = buscarChamado(id);
+            if (!chamado) {
+                return;
+            }
+
+            editandoId = id;
+            titulo.value = chamado.titulo;
+            descricao.value = chamado.descricao;
+            esconderAviso();
+            salvar.textContent = "Atualizar";
+            formulario.hidden = false;
+            novoChamado.hidden = true;
+            titulo.focus();
+        }
+
+        function fecharFormulario() {
+            editandoId = null;
+            formularioChamado.reset();
+            esconderAviso();
+            salvar.textContent = "Salvar";
+            formulario.hidden = true;
+            novoChamado.hidden = false;
+        }
+
+        function salvarChamado(evento) {
+            evento.preventDefault();
+
+            var tituloInformado = titulo.value.trim();
+            var descricaoInformada = descricao.value.trim();
+
+            if (!tituloInformado || !descricaoInformada) {
+                mostrarAviso("Informe o título e a descrição antes de salvar.");
+                return;
+            }
+
+            if (editandoId) {
+                var chamado = buscarChamado(editandoId);
+                if (chamado) {
+                    chamado.titulo = tituloInformado;
+                    chamado.descricao = descricaoInformada;
+                }
+            } else {
+                chamados.push({
+                    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+                    titulo: tituloInformado,
+                    descricao: descricaoInformada,
+                    dataAbertura: new Date().toISOString()
+                });
+            }
+
+            guardarChamados();
+            fecharFormulario();
+            desenharTela();
+        }
+
+        function pedirExclusao(id) {
+            var chamado = buscarChamado(id);
+            if (!chamado) {
+                return;
+            }
+
+            excluindoId = id;
+            textoModal.textContent = "O chamado \"" + chamado.titulo + "\" será removido da lista.";
+            modal.hidden = false;
+            cancelarExclusao.focus();
+        }
+
+        function confirmarRemocao() {
+            chamados = chamados.filter(function (chamado) {
+                return chamado.id !== excluindoId;
+            });
+            guardarChamados();
+            if (editandoId === excluindoId) {
+                fecharFormulario();
+            }
+            fecharModal();
+            desenharTela();
+        }
+
+        function fecharModal() {
+            excluindoId = null;
+            modal.hidden = true;
+        }
+
+        function desenharTela() {
+            corpoTabela.replaceChildren();
+
+            if (chamados.length === 0) {
+                lista.hidden = true;
+                contador.textContent = "";
+                vazio.hidden = false;
+                iniciarJogo();
+                return;
+            }
+
+            pararJogo();
+            vazio.hidden = true;
+            lista.hidden = false;
+            contador.textContent = chamados.length === 1
+                ? "1 registro cadastrado"
+                : chamados.length + " registros cadastrados";
+
+            chamados.forEach(function (chamado) {
+                var linha = document.createElement("tr");
+                linha.appendChild(celula(chamado.titulo));
+                linha.appendChild(celula(chamado.descricao));
+                linha.appendChild(celula(formatarData(chamado.dataAbertura)));
+
+                var acoes = document.createElement("td");
+                acoes.className = "acoes";
+
+                var botaoEditar = document.createElement("button");
+                botaoEditar.type = "button";
+                botaoEditar.className = "editar";
+                botaoEditar.textContent = "Editar";
+                botaoEditar.addEventListener("click", function () {
+                    abrirEdicao(chamado.id);
+                });
+
+                var botaoExcluir = document.createElement("button");
+                botaoExcluir.type = "button";
+                botaoExcluir.className = "excluir";
+                botaoExcluir.textContent = "Excluir";
+                botaoExcluir.addEventListener("click", function () {
+                    pedirExclusao(chamado.id);
+                });
+
+                acoes.appendChild(botaoEditar);
+                acoes.appendChild(botaoExcluir);
+                linha.appendChild(acoes);
+                corpoTabela.appendChild(linha);
+            });
+        }
+
+        function celula(texto) {
+            var coluna = document.createElement("td");
+            coluna.textContent = texto;
+            return coluna;
+        }
+
+        function formatarData(iso) {
+            var data = new Date(iso);
+            if (Number.isNaN(data.getTime())) {
+                return "";
+            }
+            return data.toLocaleString("pt-BR");
+        }
+
+        function buscarChamado(id) {
+            return chamados.find(function (chamado) {
+                return chamado.id === id;
+            });
+        }
+
+        function mostrarAviso(mensagem) {
+            aviso.textContent = mensagem;
+            aviso.hidden = false;
+        }
+
+        function esconderAviso() {
+            aviso.textContent = "";
+            aviso.hidden = true;
+        }
+
+        function teclaPressionada(evento) {
+            if (evento.key === "Escape" && !modal.hidden) {
+                fecharModal();
+                return;
+            }
+
+            if (!jogo.ativo || vazio.hidden) {
+                return;
+            }
+
+            if (evento.code !== "Space" && evento.code !== "ArrowUp") {
+                return;
+            }
+
+            var tag = document.activeElement && document.activeElement.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") {
+                return;
+            }
+
+            evento.preventDefault();
+            if (jogo.fim) {
+                reiniciarPartida();
+            } else {
+                pular();
+            }
+        }
+
+        function clicarJogo() {
+            if (!jogo.ativo) {
+                return;
+            }
+            if (jogo.fim) {
+                reiniciarPartida();
+            } else {
+                pular();
+            }
+        }
+
+        function iniciarJogo() {
+            ajustarCanvas();
+            if (jogo.ativo) {
+                return;
+            }
+            jogo.ativo = true;
+            reiniciarPartida();
+            quadro();
+        }
+
+        function pararJogo() {
+            jogo.ativo = false;
+            cancelAnimationFrame(jogo.quadroId);
+        }
+
+        function reiniciarPartida() {
+            jogo.alunoY = jogo.chao;
+            jogo.velocidadeVertical = 0;
+            jogo.noChao = true;
+            jogo.passo = 0;
+            jogo.obstaculos = [];
+            jogo.velocidade = 5;
+            jogo.distancia = 0;
+            jogo.proximoObstaculo = 80;
+            jogo.pontos = 0;
+            jogo.fim = false;
+        }
+
+        function pular() {
+            if (jogo.noChao && !jogo.fim) {
+                jogo.velocidadeVertical = jogo.impulso;
+                jogo.noChao = false;
+            }
+        }
+
+        function ajustarCanvas() {
+            var largura = Math.max(320, canvas.parentElement.clientWidth - 48);
+            canvas.width = largura;
+            canvas.height = 220;
+            jogo.chao = 176;
+        }
+
+        function quadro() {
+            if (!jogo.ativo) {
+                return;
+            }
+
+            atualizarJogo();
+            desenharJogo();
+            jogo.quadroId = requestAnimationFrame(quadro);
+        }
+
+        function atualizarJogo() {
+            if (jogo.fim) {
+                return;
+            }
+
+            jogo.distancia += jogo.velocidade;
+            jogo.pontos += jogo.velocidade;
+            jogo.velocidade = 5 + Math.min(6, jogo.pontos / 900);
+            jogo.passo += jogo.noChao ? jogo.velocidade * 0.18 : 0;
+
+            jogo.velocidadeVertical += jogo.gravidade;
+            jogo.alunoY += jogo.velocidadeVertical;
+            if (jogo.alunoY >= jogo.chao) {
+                jogo.alunoY = jogo.chao;
+                jogo.velocidadeVertical = 0;
+                jogo.noChao = true;
+            }
+
+            if (jogo.distancia > jogo.proximoObstaculo) {
+                criarObstaculo();
+                jogo.proximoObstaculo = jogo.distancia + 260 + Math.random() * 240;
+            }
+
+            jogo.obstaculos.forEach(function (obstaculo) {
+                obstaculo.x -= jogo.velocidade;
+            });
+            jogo.obstaculos = jogo.obstaculos.filter(function (obstaculo) {
+                return obstaculo.x + obstaculo.largura > 0;
+            });
+
+            var estudante = caixaEstudante();
+            var bateu = jogo.obstaculos.some(function (obstaculo) {
+                return cruza(estudante, obstaculo);
+            });
+            if (bateu) {
+                jogo.fim = true;
+            }
+        }
+
+        function criarObstaculo() {
+            var prova = Math.random() < 0.45;
+            jogo.obstaculos.push({
+                x: canvas.width + 10,
+                y: prova ? jogo.chao - 46 : jogo.chao - 36,
+                largura: prova ? 32 : 28,
+                altura: prova ? 46 : 36,
+                tipo: prova ? "prova" : "livro"
+            });
+        }
+
+        function caixaEstudante() {
+            return {
+                x: jogo.alunoX + 8,
+                y: jogo.alunoY - 68,
+                largura: 28,
+                altura: 62
+            };
+        }
+
+        function cruza(primeiro, segundo) {
+            return primeiro.x < segundo.x + segundo.largura &&
+                primeiro.x + primeiro.largura > segundo.x &&
+                primeiro.y < segundo.y + segundo.altura &&
+                primeiro.y + primeiro.altura > segundo.y;
+        }
+
+        function desenharJogo() {
+            var largura = canvas.width;
+            var altura = canvas.height;
+            contexto.clearRect(0, 0, largura, altura);
+
+            var ceu = contexto.createLinearGradient(0, 0, 0, altura);
+            ceu.addColorStop(0, "#c5e4f7");
+            ceu.addColorStop(1, "#eef8e8");
+            contexto.fillStyle = ceu;
+            contexto.fillRect(0, 0, largura, altura);
+
+            contexto.fillStyle = "rgba(255, 255, 255, 0.85)";
+            contexto.beginPath();
+            contexto.ellipse(120, 42, 34, 16, 0, 0, Math.PI * 2);
+            contexto.ellipse(148, 46, 24, 14, 0, 0, Math.PI * 2);
+            contexto.fill();
+
+            contexto.fillStyle = "#8fbf73";
+            contexto.fillRect(0, jogo.chao, largura, altura - jogo.chao);
+            contexto.strokeStyle = "#5f8f49";
+            contexto.lineWidth = 3;
+            contexto.beginPath();
+            contexto.moveTo(0, jogo.chao);
+            contexto.lineTo(largura, jogo.chao);
+            contexto.stroke();
+
+            jogo.obstaculos.forEach(desenharObstaculo);
+            desenharEstudante();
+
+            contexto.fillStyle = "#1f2933";
+            contexto.font = "700 16px Segoe UI, sans-serif";
+            contexto.fillText(String(Math.floor(jogo.pontos / 10)), 16, 28);
+
+            if (jogo.fim) {
+                contexto.fillStyle = "rgba(31, 41, 51, 0.45)";
+                contexto.fillRect(0, 0, largura, altura);
+                contexto.fillStyle = "white";
+                contexto.font = "700 22px Segoe UI, sans-serif";
+                contexto.textAlign = "center";
+                contexto.fillText("O estudante tropeçou", largura / 2, altura / 2 - 8);
+                contexto.font = "16px Segoe UI, sans-serif";
+                contexto.fillText("Clique para correr de novo", largura / 2, altura / 2 + 20);
+                contexto.textAlign = "left";
+            }
+        }
+
+        function desenharEstudante() {
+            var x = jogo.alunoX;
+            var pe = jogo.alunoY;
+            var balanco = jogo.noChao ? Math.sin(jogo.passo) * 8 : 0;
+
+            contexto.strokeStyle = "#16324f";
+            contexto.lineWidth = 4;
+            contexto.lineCap = "round";
+            contexto.beginPath();
+            contexto.moveTo(x + 14, pe - 30);
+            contexto.lineTo(x + 6 - balanco, pe - 2);
+            contexto.moveTo(x + 18, pe - 30);
+            contexto.lineTo(x + 24 + balanco, pe - 2);
+            contexto.stroke();
+
+            contexto.fillStyle = "#3d5a40";
+            contexto.fillRect(x - 2, pe - 50, 14, 24);
+            contexto.fillStyle = "#1d4e89";
+            contexto.fillRect(x + 8, pe - 54, 22, 28);
+
+            contexto.strokeStyle = "#1d4e89";
+            contexto.beginPath();
+            contexto.moveTo(x + 28, pe - 48);
+            contexto.lineTo(x + 38, pe - 36 - balanco / 2);
+            contexto.stroke();
+
+            contexto.fillStyle = "#e7b899";
+            contexto.beginPath();
+            contexto.arc(x + 20, pe - 66, 11, 0, Math.PI * 2);
+            contexto.fill();
+            contexto.fillStyle = "#3b2a22";
+            contexto.beginPath();
+            contexto.arc(x + 20, pe - 70, 11, Math.PI, Math.PI * 2);
+            contexto.fill();
+            contexto.fillRect(x + 10, pe - 70, 8, 5);
+            contexto.fillStyle = "#1f2933";
+            contexto.fillRect(x + 25, pe - 68, 2, 2);
+        }
+
+        function desenharObstaculo(obstaculo) {
+            if (obstaculo.tipo === "livro") {
+                contexto.fillStyle = "#6b3e26";
+                contexto.fillRect(obstaculo.x, obstaculo.y, obstaculo.largura, obstaculo.altura);
+                contexto.fillStyle = "#f7f1e6";
+                contexto.fillRect(obstaculo.x + 4, obstaculo.y + 4, obstaculo.largura - 10, obstaculo.altura - 8);
+                contexto.strokeStyle = "#c45c26";
+                contexto.lineWidth = 1;
+                contexto.beginPath();
+                contexto.moveTo(obstaculo.x + 8, obstaculo.y + 12);
+                contexto.lineTo(obstaculo.x + obstaculo.largura - 8, obstaculo.y + 12);
+                contexto.moveTo(obstaculo.x + 8, obstaculo.y + 18);
+                contexto.lineTo(obstaculo.x + obstaculo.largura - 8, obstaculo.y + 18);
+                contexto.stroke();
+                return;
+            }
+
+            contexto.fillStyle = "#fffef9";
+            contexto.fillRect(obstaculo.x, obstaculo.y, obstaculo.largura, obstaculo.altura);
+            contexto.strokeStyle = "#9b2335";
+            contexto.lineWidth = 2;
+            contexto.strokeRect(obstaculo.x, obstaculo.y, obstaculo.largura, obstaculo.altura);
+            contexto.fillStyle = "#9b2335";
+            contexto.font = "700 9px Segoe UI, sans-serif";
+            contexto.fillText("PROVA", obstaculo.x + 2, obstaculo.y + 16);
+            contexto.strokeStyle = "#d9d0c3";
+            contexto.lineWidth = 1;
+            contexto.beginPath();
+            contexto.moveTo(obstaculo.x + 4, obstaculo.y + 24);
+            contexto.lineTo(obstaculo.x + obstaculo.largura - 4, obstaculo.y + 24);
+            contexto.moveTo(obstaculo.x + 4, obstaculo.y + 30);
+            contexto.lineTo(obstaculo.x + obstaculo.largura - 4, obstaculo.y + 30);
+            contexto.stroke();
+        }
+    </script>
+</body>
+</html>
